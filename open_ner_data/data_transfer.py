@@ -1,0 +1,258 @@
+#coding=utf-8
+import numpy as np
+import json
+import string
+import os
+import re
+from collections import defaultdict
+
+# 将人民日报数据集进行转换
+def transfer_data_0(source_file, target_file):
+    '''
+    人民日报数据格式：
+    1	迈向	vt	O	_
+    2	充满	vt	O	_
+    3	希望	n	O	_
+    4	的	ud	O	_
+    5	新	a	O	_
+    6	世纪	n	O	_
+    7	——	wp	O	_
+    8	一九九八年新年	t	DATE	_
+    9	讲话	n	O	_
+    10	(	wkz	O	_
+    '''
+    with open(source_file) as f, open(
+            target_file, "w+", encoding="utf-8") as g:
+        text = ""
+        entity_list = []  # {"entity_index": {"begin": 21, "end": 25}, "entity_type": "影视作品", "entity": "喜剧之王"}
+        lines = 0
+        for word_line in f:
+            if word_line != "\n":  # 是句子的词
+                # print(word_line)
+                word_split = word_line.strip().split("\t")
+                # print(word_split)
+                if word_split[3] != "O":
+                    entity_list.append({"entity_index": {"begin": len(text), "end": len(text + word_split[1])},
+                                        "entity_type": word_split[3], "entity": word_split[1]})
+                text += word_split[1]
+            else:  # 句子的结尾
+                g.write(json.dumps({"text": text, "entity_list": entity_list}, ensure_ascii=False) + "\n")
+                lines += 1
+                text = ""
+                entity_list = []
+                if lines == 1000:
+                    break
+    print("共有{}行".format(lines))
+
+
+# 将平常ner标注(微博、微软)数据转化为项目所需数据格式
+def transfer_data_1(source_file, target_file):
+    '''
+    将
+    男	B-PER.NOM /// B-PER
+    女	B-PER.NOM
+    必	O
+    看	O
+    的	O
+    微	O
+    博	O
+    花	O
+    心	O
+
+    我	O
+    参	O
+    与	O
+    了	O
+    南	B-GPE.NAM
+    都	I-GPE.NAM
+    标注类型转化为要求的数据格式
+    '''
+    with open(source_file, errors="ignore") as f, open(target_file, "w+", encoding="utf-8") as g:
+        text = ""
+        entity_list = [] # {"entity_index": {"begin": 21, "end": 25}, "entity_type": "影视作品", "entity": "喜剧之王"}
+        lines = 0
+        words_start = 0 # 词的开始边界
+        words_end = 0 # 词的结束边界
+        words_bool = None # 是否存在未加入的新词，存在的话设置为词的类型，默认没有
+        for word_line in f:
+            word_line = word_line.strip()
+            word_split = word_line.strip().split(" ")
+            if '' in word_split:
+                word_split.remove('')
+            if word_split: # 是句子的词
+                if len(word_split) == 1:
+                    word_split.insert(0, "、")
+                # print(word_split)
+                if word_split[1].startswith("B") and not word_split[1].endswith("NOM"):
+                    words_start = len(text)
+                    words_end = 1
+                    words_bool = word_split[1][2:word_split[1].rfind(".")]
+                    if not words_bool:
+                        words_bool = word_split[1]
+                elif word_split[1].startswith("I") and not word_split[1].endswith("NOM"):
+                    words_end += 1
+                elif word_split[1] == "O" and words_bool:
+                    entity_list.append({"entity_index": {"begin": words_start, "end": words_start + words_end},
+                                        "entity_type": words_bool,
+                                        "entity": text[words_start:words_start + words_end]})
+                    words_bool = None
+                text += word_split[0]
+            else: # 句子的结尾
+                if words_bool:
+                    entity_list.append({"entity_index": {"begin": words_start, "end": words_start + words_end},
+                                        "entity_type": words_bool,
+                                        "entity": text[words_start:words_start + words_end]})
+                    words_bool = None
+                g.write(json.dumps({"text":text,"entity_list":entity_list}, ensure_ascii=False) + "\n")
+                lines += 1
+                text = ""
+                entity_list = []
+                # if lines == 1000:
+                #     break
+    print("共有{}行".format(lines))
+#
+# transfer_data_1("/home/liguocai/model_py36/data_diversity/product_testdata_kg/open_ner_data/source_data/ChineseNLPCorpus/NER/MSRA/dh_msra.txt",
+#                 "/home/liguocai/model_py36/data_diversity/product_testdata_kg/open_ner_data/msra_1000.txt")
+# transfer_data_1("/home/liguocai/model_py36/data_diversity/product_testdata_kg/open_ner_data/video_music_book_datasets/data/train.txt",
+#                 "/home/liguocai/model_py36/data_diversity/product_testdata_kg/open_ner_data/video_music_book_datasets/train.txt")
+# transfer_data_1("/home/liguocai/model_py36/data_diversity/product_testdata_kg/open_ner_data/video_music_book_datasets/data/valid.txt",
+#                 "/home/liguocai/model_py36/data_diversity/product_testdata_kg/open_ner_data/video_music_book_datasets/dev.txt")
+# transfer_data_1("/home/liguocai/model_py36/data_diversity/product_testdata_kg/open_ner_data/video_music_book_datasets/data/test.txt",
+#                 "/home/liguocai/model_py36/data_diversity/product_testdata_kg/open_ner_data/video_music_book_datasets/test.txt")
+
+# boson ner数据格式转化
+def transfer_data_2(source_file, target_file):
+    '''
+    boson数据格式：
+    完成!!!!!!!!!!给大家看看 {{time:今天}}{{person_name:吕小珊}}要交大家 新手也可以简单上手!!! 上学也不会觉得奇怪的妆感喔^^ 大家加油喔~~!!!!!你的喜欢
+    会是{{person_name:吕小珊}} 最你的喜欢 会是{{person_name:吕小珊}} 最大的动力唷~~!!! 谢谢大家~~ 大的动力唷~~!!! 谢谢大家~~
+    '''
+    p = re.compile("({{.*?:.*?}})")
+    p_ = re.compile("{{.*?:(.*?)}}")
+    length = 0
+    with open(source_file) as f, open(target_file, "w+", encoding="utf-8") as g:
+        for s in f:
+            total_de = 0
+            entity_list = []
+
+            for item1, item2 in zip(p.finditer(s), p_.findall(s)):
+                # 替换
+                start = item1.start() - total_de
+                ss = s[start:item1.end() - total_de]
+                total_de += len(ss) - len(item2)
+                s = s.replace(ss, item2, 1)
+                item1.start() - total_de
+                entity_list.append({"entity_index": {"begin": start, "end": start + len(item2)},
+                                    "entity_type": ss[2:len(ss) - 3 - len(item2)], "entity": item2})
+
+            g.write(json.dumps({"text": s, "entity_list": entity_list}, ensure_ascii=False)+"\n")
+            length += 1
+            if length == 1000:
+                break
+        print("共有{}行".format(length))
+# transfer_data_1("/home/liguocai/model_py36/data_diversity/product_testdata_kg/open_ner_data/source_data/ChineseNLPCorpus/NER/boson/origindata.txt",
+#                 "/home/liguocai/model_py36/data_diversity/product_testdata_kg/open_ner_data/boson_1000.txt")
+
+
+# clue数据集转化
+def transfer_data_3(source_file, target_file):
+    '''
+    源数据：
+    {"text": "她写道：抗战胜利时我从重庆坐民联轮到南京，去中山陵瞻仰，也到秦淮河去过。然后就去北京了。", "label": {"address": {"重庆": [[11, 12]], "南京": [[18, 19]],
+    "北京": [[40, 41]]}, "scene": {"中山陵": [[22, 24]], "秦淮河": [[30, 32]]}}}
+    '''
+    with open(source_file) as f, open(target_file, "w+", encoding="utf-8") as g:
+        length = 0
+        for line in f:
+            line_json = json.loads(line)
+            text = line_json['text']
+            entity_list = []
+
+            if "label" in line_json.keys():
+                for label, e in line_json['label'].items():
+                    for e_name, e_index in e.items():
+                        entity_list.append({"entity_index": {"begin": e_index[0][0], "end":  e_index[0][1]},
+                                            "entity_type": label, "entity": e_name})
+
+            g.write(json.dumps({"text": text, "entity_list": entity_list}, ensure_ascii=False) + "\n")
+            length += 1
+            if length == 1000:
+                break
+
+        print("共有{}行".format(length))
+
+# transfer_data_3('./open_ner_data/cluener_public/dev.json', './open_ner_data/cluener_public/dev.txt')
+# transfer_data_3('./open_ner_data/cluener_public/train.json', './open_ner_data/cluener_public/train_1000.txt')
+# transfer_data_3('./open_ner_data/cluener_public/test.json', './open_ner_data/cluener_public/test.txt')
+
+# 将brat标注的文件转化为所需格式
+def transfer_data_4(source_file, test=False):
+
+    lines = 0
+
+    map_dict = {"DRUG":"药品",
+                "DRUG_INGREDIENT":"药物成分",
+                "DISEASE":"疾病",
+                "SYMPTOM":"症状",
+                "SYNDROME":"证候",
+                "DISEASE_GROUP":"疾病分组",
+                "FOOD":"食物",
+                "FOOD_GROUP":"食物分组",
+                "PERSON_GROUP":"人群",
+                "DRUG_GROUP":"药品分组",
+                "DRUG_DOSAGE":"药物剂型",
+                "DRUG_TASTE":"药物性味",
+                "DRUG_EFFICACY":"中药功效"}
+
+    if not test:
+        file_list = []
+        for file_name in os.listdir(source_file):
+            if file_name.endswith(".ann"):
+                file_list.append(file_name[:-3])
+        with open(source_file[:source_file.rfind("/")+1] + "train.txt", "w+", encoding="utf-8") as f:
+            for file_name in file_list:
+                with open(os.path.join(source_file,file_name+"ann")) as w, open(os.path.join(source_file,file_name+"txt")) as g:
+                    text = g.read()
+                    entity_list = []
+                    for line in w:
+                        _, entity_type, begin, end, entity = line.strip().split()
+                        entity_type, begin, end = map_dict[entity_type], int(begin), int(end)
+                        entity_list.append({"entity_index": {"begin": begin, "end":  end},
+                                            "entity_type": entity_type, "entity": entity})
+                    f.write(json.dumps({"text": text, "entity_list": entity_list}, ensure_ascii=False) + "\n")
+                    lines += 1
+    else:
+        with open(source_file[:source_file.rfind("/") + 1] + "test.txt", "w+", encoding="utf-8") as f:
+            for file in os.listdir(source_file):
+                with open(os.path.join(source_file,file)) as g:
+                    text = g.read()
+                    f.write(json.dumps({"text": text, "entity_list": []}, ensure_ascii=False) + "\n")
+                    lines += 1
+
+    print("共有数据{}行".format(lines))
+
+# transfer_data_4("./open_ner_data/tianchi_yiyao/train", test=False)
+# transfer_data_4("./open_ner_data/tianchi_yiyao/chusai_xuanshou", test=True)
+
+# 统计实体类型和个数
+def sta_entity(file, num=None):
+    sta_dict = defaultdict(int)
+    with open(file, encoding="utf-8") as f:
+        data_list = list(f.readlines())
+
+        length = len(data_list) if not num else len
+
+        entity_type = []
+        for line in data_list[:length]:
+            text_e = json.loads(line)
+            for e in text_e["entity_list"]:
+                if e["entity_type"] not in entity_type:
+                    entity_type.append(e["entity_type"])
+                sta_dict[e["entity_type"]] += 1
+
+        entity_type.sort()
+        print("实体类型：",entity_type)
+        print("实体类型及个数：", sta_dict)
+
+# sta_entity("./open_ner_data/cluener_public/train.txt")
+sta_entity("MSRA/msra_test.txt")

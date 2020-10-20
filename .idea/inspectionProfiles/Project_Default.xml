@@ -1,0 +1,32 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="19">
+            <item index="0" class="java.lang.String" itemvalue="gensim" />
+            <item index="1" class="java.lang.String" itemvalue="pyplotz" />
+            <item index="2" class="java.lang.String" itemvalue="jieba" />
+            <item index="3" class="java.lang.String" itemvalue="fairseq" />
+            <item index="4" class="java.lang.String" itemvalue="scikit_learn" />
+            <item index="5" class="java.lang.String" itemvalue="torch" />
+            <item index="6" class="java.lang.String" itemvalue="torchvision" />
+            <item index="7" class="java.lang.String" itemvalue="pytorch_crf" />
+            <item index="8" class="java.lang.String" itemvalue="redis" />
+            <item index="9" class="java.lang.String" itemvalue="torchcrf" />
+            <item index="10" class="java.lang.String" itemvalue="pysolr" />
+            <item index="11" class="java.lang.String" itemvalue="kafka" />
+            <item index="12" class="java.lang.String" itemvalue="tensorboardX" />
+            <item index="13" class="java.lang.String" itemvalue="Flask_Cors" />
+            <item index="14" class="java.lang.String" itemvalue="arango" />
+            <item index="15" class="java.lang.String" itemvalue="pyltp" />
+            <item index="16" class="java.lang.String" itemvalue="rpyc" />
+            <item index="17" class="java.lang.String" itemvalue="pytorch_transformers" />
+            <item index="18" class="java.lang.String" itemvalue="bayesian_optimization" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
