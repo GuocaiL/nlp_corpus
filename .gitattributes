@@ -1,0 +1,4 @@
+dialog/chitchat/douban/train.txt filter=lfs diff=lfs merge=lfs -text
+dialog/chitchat/LCCC/train_dev.txt filter=lfs diff=lfs merge=lfs -text
+dialog/chitchat/weibo/train.txt filter=lfs diff=lfs merge=lfs -text
+dialog/knowledge/tencent/train.txt.zip filter=lfs diff=lfs merge=lfs -text
