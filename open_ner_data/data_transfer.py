@@ -171,7 +171,7 @@ def transfer_data_3(source_file, target_file):
             if "label" in line_json.keys():
                 for label, e in line_json['label'].items():
                     for e_name, e_index in e.items():
-                        entity_list.append({"entity_index": {"begin": e_index[0][0], "end":  e_index[0][1]},
+                        entity_list.append({"entity_index": {"begin": e_index[0][0], "end":  e_index[0][1]+1},
                                             "entity_type": label, "entity": e_name})
 
             g.write(json.dumps({"text": text, "entity_list": entity_list}, ensure_ascii=False) + "\n")
@@ -255,4 +255,4 @@ def sta_entity(file, num=None):
         print("实体类型及个数：", sta_dict)
 
 # sta_entity("./open_ner_data/cluener_public/train.txt")
-sta_entity("MSRA/msra_test.txt")
+# sta_entity("MSRA/msra_test.txt")
