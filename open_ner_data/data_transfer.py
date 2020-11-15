@@ -125,9 +125,9 @@ def transfer_data_1(source_file, target_file):
 #                 "/home/liguocai/model_py36/data_diversity/product_testdata_kg/open_ner_data/video_music_book_datasets/dev.txt")
 # transfer_data_1("/home/liguocai/model_py36/data_diversity/product_testdata_kg/open_ner_data/video_music_book_datasets/data/test.txt",
 #                 "/home/liguocai/model_py36/data_diversity/product_testdata_kg/open_ner_data/video_music_book_datasets/test.txt")
-transfer_data_1("./ResumeNER/train.char.bmes", "./ResumeNER/train.txt")
-transfer_data_1("./ResumeNER/dev.char.bmes", "./ResumeNER/dev.txt")
-transfer_data_1("./ResumeNER/test.char.bmes", "./ResumeNER/test.txt")
+# transfer_data_1("./ResumeNER/train.char.bmes", "./ResumeNER/train.txt")
+# transfer_data_1("./ResumeNER/dev.char.bmes", "./ResumeNER/dev.txt")
+# transfer_data_1("./ResumeNER/test.char.bmes", "./ResumeNER/test.txt")
 
 
 
@@ -254,6 +254,51 @@ def transfer_data_4(source_file, test=False):
 # transfer_data_4("./open_ner_data/tianchi_yiyao/train", test=False)
 # transfer_data_4("./open_ner_data/tianchi_yiyao/chusai_xuanshou", test=True)
 
+# 依渡云数据集格式转化
+def transfer_data_5(source_file, target_file):
+    """
+    {"originalText": "，患者7月前因“下腹腹胀伴反酸”至我院就诊，完善相关检查，诊断“胃体胃窦癌(CT4N2M0,IIIB期)”，
+    建议先行化疗，患者及家属表示理解同意 ，遂于2015-5-26、2015-06-19、2015-07-13分别予XELOX
+    (希罗达 1250MG BID PO D1-14+奥沙利铂150MG IVDRIP Q3W)化疗三程,过程顺利，无明显副反应，
+    后于2015-08-24在全麻上行胃癌根治术（远端胃大切），术程顺利，术后预防感染支持对症等处理。，术后病理示：
+    胃中至低分化管状腺癌（LAUREN，分型：肠型），浸润至胃壁浆膜上层，可见神经束侵犯，未见明确脉管内癌栓；
+    肿瘤消退分级（MANDARD），：TRG4；网膜组织未见癌；LN（-）；YPT3N0M0，IIA期。术后恢复可，于2015-10-10、
+    开始采用XELOX化疗方案化疗（奥沙利铂150MG Q3W IVDRIP+卡培他滨1250MGBID*14天）一程，过程顺利。
+    现为行上程化疗来我院就诊，拟“胃癌综合治疗后” 收入我科。自下次出院以来，患者精神可，食欲尚可，大小便正常，
+    体重无明显上降。", "entities":
+    [{"end_pos": 10, "label_type": "解剖部位", "overlap": 0, "start_pos": 8},
+    {"end_pos": 11, "label_type": "解剖部位", "overlap": 0, "start_pos": 10},
+    {"label_type": "疾病和诊断", "overlap": 0, "start_pos": 32, "end_pos": 52},
+    {"end_pos": 118, "label_type": "药物", "overlap": 0, "start_pos": 115},
+    {"end_pos": 143, "label_type": "药物", "overlap": 0, "start_pos": 139},
+    {"label_type": "手术", "overlap": 0, "start_pos": 193, "end_pos": 206},
+    {"label_type": "疾病和诊断", "overlap": 0, "start_pos": 233, "end_pos": 257},
+    {"label_type": "解剖部位", "overlap": 0, "start_pos": 261, "end_pos": 262},
+    {"end_pos": 374, "label_type": "药 物", "overlap": 0, "start_pos": 370},
+    {"end_pos": 395, "label_type": "药物", "overlap": 0, "start_pos": 391},
+    {"label_type": "疾病和诊断", "overlap": 0, "start_pos": 432, "end_pos": 439}]}
+    """
+    with open(source_file, encoding="utf-8-sig") as f, open(target_file, "w+", encoding="utf-8") as g:
+        length = 0
+        error = 0
+        for line in f:
+            try:
+                line_json = json.loads(line)
+                entity_list = []
+                text = line_json["originalText"]
+                for entities in line_json["entities"]:
+                    entity_list.append({"entity_index": {"begin": entities["start_pos"],
+                                                         "end":  entities["end_pos"]},
+                                                "entity_type": entities["label_type"],
+                                        "entity": text[entities["start_pos"]:entities["end_pos"]]})
+                g.write(json.dumps({"text": text, "entity_list": entity_list}, ensure_ascii=False) + "\n")
+                length += 1
+            except:
+                error += 1
+        print("错误：{}个".format(error))
+        print("共有{}行".format(length))
+
+
 # 统计实体类型和个数
 def sta_entity(file, num=None):
     sta_dict = defaultdict(int)
@@ -273,9 +318,14 @@ def sta_entity(file, num=None):
         entity_type.sort()
         print("实体类型：",entity_type)
         print("实体类型及个数：", sta_dict)
-print("./ResumeNER/train.txt")
-sta_entity("./ResumeNER/train.txt")
-print("./ResumeNER/dev.txt")
-sta_entity("./ResumeNER/dev.txt")
-print("./ResumeNER/test.txt")
-sta_entity("./ResumeNER/test.txt")
+
+
+print("train1")
+# transfer_data_5("yidu-s4k/subtask1_training_part1.txt", "yidu-s4k/train1.txt")
+sta_entity("yidu-s4k/train1.txt")
+print("train2")
+transfer_data_5("yidu-s4k/subtask1_training_part2.txt", "yidu-s4k/train2.txt")
+sta_entity("yidu-s4k/train2.txt")
+print("test")
+transfer_data_5("yidu-s4k/subtask1_test_set_with_answer.json", "yidu-s4k/test.txt")
+sta_entity("yidu-s4k/test.txt")
