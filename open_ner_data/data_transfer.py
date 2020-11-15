@@ -47,6 +47,7 @@ def transfer_data_0(source_file, target_file):
 
 # 将平常ner标注(微博、微软)数据转化为项目所需数据格式
 def transfer_data_1(source_file, target_file):
+    # 同时满足BIEO标注、BIO标注和BMESO标注
     '''
     将
     男	B-PER.NOM /// B-PER
@@ -83,13 +84,18 @@ def transfer_data_1(source_file, target_file):
                 if len(word_split) == 1:
                     word_split.insert(0, "、")
                 # print(word_split)
-                if word_split[1].startswith("B") and not word_split[1].endswith("NOM"):
+                if (word_split[1].startswith("B") or word_split[1].startswith("S")) and not word_split[1].endswith("NOM"):
+                    if words_bool:
+                        entity_list.append({"entity_index": {"begin": words_start, "end": words_start + words_end},
+                                            "entity_type": words_bool,
+                                            "entity": text[words_start:words_start + words_end]})
                     words_start = len(text)
                     words_end = 1
-                    words_bool = word_split[1][2:word_split[1].rfind(".")]
-                    if not words_bool:
-                        words_bool = word_split[1]
-                elif word_split[1].startswith("I") and not word_split[1].endswith("NOM"):
+                    if "." in word_split[1]:
+                        words_bool = word_split[1][2:word_split[1].rfind(".")+1]
+                    else:
+                        words_bool = word_split[1][2:]
+                elif (word_split[1].startswith("M") or word_split[1].startswith("I") or word_split[1].startswith("E")) and not word_split[1].endswith("NOM"):
                     words_end += 1
                 elif word_split[1] == "O" and words_bool:
                     entity_list.append({"entity_index": {"begin": words_start, "end": words_start + words_end},
@@ -119,6 +125,11 @@ def transfer_data_1(source_file, target_file):
 #                 "/home/liguocai/model_py36/data_diversity/product_testdata_kg/open_ner_data/video_music_book_datasets/dev.txt")
 # transfer_data_1("/home/liguocai/model_py36/data_diversity/product_testdata_kg/open_ner_data/video_music_book_datasets/data/test.txt",
 #                 "/home/liguocai/model_py36/data_diversity/product_testdata_kg/open_ner_data/video_music_book_datasets/test.txt")
+transfer_data_1("./ResumeNER/train.char.bmes", "./ResumeNER/train.txt")
+transfer_data_1("./ResumeNER/dev.char.bmes", "./ResumeNER/dev.txt")
+transfer_data_1("./ResumeNER/test.char.bmes", "./ResumeNER/test.txt")
+
+
 
 # boson ner数据格式转化
 def transfer_data_2(source_file, target_file):
@@ -187,6 +198,15 @@ def transfer_data_3(source_file, target_file):
 
 # 将brat标注的文件转化为所需格式
 def transfer_data_4(source_file, test=False):
+    """
+    T1      DRUG_EFFICACY 1 5       补肾益肺
+    T2      DRUG_EFFICACY 6 10      益精助阳
+    T3      DRUG_EFFICACY 11 15     益气定喘
+    T4      SYMPTOM 23 27   精神倦怠
+    T5      SYNDROME 35 37  阴虚
+    T6      SYMPTOM 37 39   咳嗽
+    T7      SYMPTOM 39 41   体弱
+    """
 
     lines = 0
 
@@ -253,6 +273,9 @@ def sta_entity(file, num=None):
         entity_type.sort()
         print("实体类型：",entity_type)
         print("实体类型及个数：", sta_dict)
-
-# sta_entity("./open_ner_data/cluener_public/train.txt")
-# sta_entity("MSRA/msra_test.txt")
+print("./ResumeNER/train.txt")
+sta_entity("./ResumeNER/train.txt")
+print("./ResumeNER/dev.txt")
+sta_entity("./ResumeNER/dev.txt")
+print("./ResumeNER/test.txt")
+sta_entity("./ResumeNER/test.txt")
